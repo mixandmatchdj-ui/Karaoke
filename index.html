@@ -573,7 +573,7 @@
             <h2>Enregistrez-vous 🎙️</h2>
             
             <div class="form-group">
-                <label for="prenomsInput">Prenom(s)</label>
+                <label for="prenomsInput">Prénom(s)</label>
                 <input 
                     type="text" 
                     id="prenomsInput" 
@@ -583,7 +583,7 @@
             </div>
 
             <div class="form-group">
-                <label for="tableInput">Numero/Nom de table *</label>
+                <label for="tableInput">Numéro/Nom de table *</label>
                 <input 
                     type="text" 
                     id="tableInput" 
@@ -602,8 +602,8 @@
     <!-- Modal Suggestion -->
     <div class="modal" id="suggestionModal">
         <div class="modal-content">
-            <h2>Suggerer une chanson 🎙️</h2>
-            <p style="color: var(--dark); margin-bottom: 20px; font-size: 0.95em;">Vous n'avez pas trouve votre chanson ? Suggerez-la !</p>
+            <h2>Suggérer une chanson 🎙️</h2>
+            <p style="color: var(--dark); margin-bottom: 20px; font-size: 0.95em;">Vous n'avez pas trouvé votre chanson ? Suggérez-la !</p>
             
             <div class="form-group">
                 <label for="suggestionArtiste">Artiste *</label>
@@ -626,7 +626,7 @@
             </div>
 
             <div class="form-group">
-                <label for="suggestionPrenoms">Prenom(s)</label>
+                <label for="suggestionPrenoms">Prénom(s)</label>
                 <input 
                     type="text" 
                     id="suggestionPrenoms" 
@@ -636,7 +636,7 @@
             </div>
 
             <div class="form-group">
-                <label for="suggestionTable">Numero/Nom de table *</label>
+                <label for="suggestionTable">Numéro/Nom de table *</label>
                 <input 
                     type="text" 
                     id="suggestionTable" 
@@ -665,7 +665,7 @@
 
     <!-- Confirmation -->
     <div class="confirmation-message" id="confirmMessage" style="display: none;">
-        ✨ Parfait ! C'est enregistre ! 🎵
+        ✨ Parfait ! C'est enregistré ! 🎵
     </div>
 
     <script>
@@ -731,7 +731,7 @@
             if (filtered.length === 0) {
                 document.getElementById('content').innerHTML = `
                     <div class="empty-state">
-                        <h3>Aucune chanson trouvee</h3>
+                        <h3>Aucune chanson trouvée</h3>
                         <p>Essayez une autre recherche</p>
                     </div>
                 `;
@@ -774,21 +774,26 @@
             const table = document.getElementById('tableInput').value.trim();
             
             if (!prenoms) {
-                alert('Veuillez entrer un prenom');
+                alert('Veuillez entrer un prénom');
                 return;
             }
 
             if (!table) {
-                alert('Veuillez entrer un numero de table');
+                alert('Veuillez entrer un numéro de table');
                 return;
             }
 
             if (!selectedSong) return;
 
-            isSubmitting = true;
+            // Disable button immédiatement
             document.getElementById('submitBtn').disabled = true;
             document.getElementById('submitBtn').innerHTML = '<span class="loader"></span>';
 
+            // Ferme le modal IMMÉDIATEMENT
+            document.getElementById('songModal').classList.remove('show');
+            showConfirmation();
+
+            // Envoie en arrière-plan
             const submission = {
                 prenoms: prenoms,
                 artiste: selectedSong.artiste,
@@ -796,6 +801,12 @@
                 table: table
             };
 
+            // Réinitialise les champs
+            document.getElementById('prenomsInput').value = '';
+            document.getElementById('tableInput').value = '';
+            selectedSong = null;
+
+            // Envoie sans attendre
             try {
                 const response = await fetch(APP_SCRIPT_URL, {
                     method: 'POST',
@@ -806,18 +817,13 @@
                     mode: 'no-cors'
                 });
 
-                // Avec no-cors, on ne peut pas vérifier response.ok
-                // Donc on considère que ça a marché
-                document.getElementById('songModal').classList.remove('show');
-                showConfirmation();
-                loadSongs(); // Recharge pour mettre a jour le DECOMPTE
-                selectedSong = null;
+                // Recharge les données en arrière-plan
+                loadSongs();
                 
             } catch (error) {
                 console.error('Erreur:', error);
-                alert('Erreur de connexion. Verifiez que l\'URL Apps Script est correcte.');
+                showError('Erreur de connexion');
             } finally {
-                isSubmitting = false;
                 document.getElementById('submitBtn').disabled = false;
                 document.getElementById('submitBtn').innerHTML = 'VALIDER';
             }
@@ -841,21 +847,39 @@
             }
 
             if (!table) {
-                alert('Veuillez entrer un numero de table');
+                alert('Veuillez entrer un numéro de table');
                 return;
             }
 
-            isSubmitting = true;
+            // Disable button immédiatement
             document.getElementById('submitSuggestionBtn').disabled = true;
             document.getElementById('submitSuggestionBtn').innerHTML = '<span class="loader"></span>';
 
+            // Ferme le modal IMMÉDIATEMENT
+            document.getElementById('suggestionModal').classList.remove('show');
+            showConfirmation();
+
+            // Envoie en arrière-plan
             const submission = {
-                prenoms: prenoms || "Non renseigne",
+                prenoms: prenoms || "Non renseigné",
                 artiste: artiste,
                 titre: titre,
                 table: table
             };
 
+            // Réinitialise les champs
+            document.getElementById('suggestionArtiste').value = '';
+            document.getElementById('suggestionTitre').value = '';
+            document.getElementById('suggestionPrenoms').value = '';
+            document.getElementById('suggestionTable').value = '';
+            
+            // Retour à l'onglet TOUS LES KARAOKES
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector('[data-tab="all"]').classList.add('active');
+            currentTab = 'all';
+            displaySongs();
+
+            // Envoie sans attendre
             try {
                 const response = await fetch(APP_SCRIPT_URL, {
                     method: 'POST',
@@ -865,29 +889,11 @@
                     body: JSON.stringify(submission),
                     mode: 'no-cors'
                 });
-
-                // Avec no-cors, on ne peut pas vérifier response.ok
-                // Donc on considère que ça a marché
-                document.getElementById('suggestionModal').classList.remove('show');
-                showConfirmation();
-                
-                // Reset des champs
-                document.getElementById('suggestionArtiste').value = '';
-                document.getElementById('suggestionTitre').value = '';
-                document.getElementById('suggestionPrenoms').value = '';
-                document.getElementById('suggestionTable').value = '';
-                
-                // Retour à l'onglet TOUS LES KARAOKES
-                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-                document.querySelector('[data-tab="all"]').classList.add('active');
-                currentTab = 'all';
-                displaySongs();
                 
             } catch (error) {
                 console.error('Erreur:', error);
-                alert('Erreur de connexion.');
+                showError('Erreur lors de l\'envoi de la suggestion');
             } finally {
-                isSubmitting = false;
                 document.getElementById('submitSuggestionBtn').disabled = false;
                 document.getElementById('submitSuggestionBtn').innerHTML = 'ENVOYER';
             }
@@ -900,6 +906,30 @@
             setTimeout(() => {
                 msg.style.display = 'none';
             }, 3000);
+        }
+
+        // Affiche une erreur discrètement
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.style.cssText = `
+                position: fixed;
+                bottom: 30px;
+                right: 30px;
+                background: #ff4444;
+                color: white;
+                padding: 15px 25px;
+                border-radius: 50px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+                font-weight: bold;
+                z-index: 2000;
+                animation: slideUp 0.5s ease-out;
+            `;
+            errorDiv.textContent = '❌ ' + message;
+            document.body.appendChild(errorDiv);
+            
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 4000);
         }
 
         // Genere QR Code
