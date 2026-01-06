@@ -542,10 +542,10 @@
         </header>
 
         <div class="tabs">
-            <button class="tab-btn active" data-tab="all">TOUTES</button>
+            <button class="tab-btn active" data-tab="all">TOUS LES KARAOKES</button>
             <button class="tab-btn" data-tab="duos">DUOS</button>
             <button class="tab-btn" data-tab="top">TOP KARAOKE</button>
-            <button class="tab-btn" data-tab="search">SELECTIONER</button>
+            <button class="tab-btn" data-tab="search">SUGGESTION</button>
         </div>
 
         <div class="search-section" id="searchSection">
@@ -553,7 +553,7 @@
                 <input 
                     type="text" 
                     id="searchInput" 
-                    placeholder="Cherchez par artiste ou titre..."
+                    placeholder="Chercher..."
                     autocomplete="off"
                 >
             </div>
@@ -599,6 +599,59 @@
         </div>
     </div>
 
+    <!-- Modal Suggestion -->
+    <div class="modal" id="suggestionModal">
+        <div class="modal-content">
+            <h2>Suggerer une chanson 🎙️</h2>
+            <p style="color: var(--dark); margin-bottom: 20px; font-size: 0.95em;">Vous n'avez pas trouve votre chanson ? Suggerez-la !</p>
+            
+            <div class="form-group">
+                <label for="suggestionArtiste">Artiste *</label>
+                <input 
+                    type="text" 
+                    id="suggestionArtiste" 
+                    placeholder="Ex: The Beatles"
+                    autocomplete="off"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="suggestionTitre">Titre *</label>
+                <input 
+                    type="text" 
+                    id="suggestionTitre" 
+                    placeholder="Ex: Hey Jude"
+                    autocomplete="off"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="suggestionPrenoms">Prenom(s)</label>
+                <input 
+                    type="text" 
+                    id="suggestionPrenoms" 
+                    placeholder="Ex: Jean, Marie, Paul"
+                    autocomplete="off"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="suggestionTable">Numero/Nom de table *</label>
+                <input 
+                    type="text" 
+                    id="suggestionTable" 
+                    placeholder="Ex: Table 5 ou Bar"
+                    autocomplete="off"
+                >
+            </div>
+
+            <div class="modal-buttons">
+                <button class="modal-btn submit" id="submitSuggestionBtn">ENVOYER</button>
+                <button class="modal-btn cancel" id="cancelSuggestionBtn">ANNULER</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal QR Code -->
     <div class="modal" id="qrModal">
         <div class="modal-content qr-modal-content">
@@ -616,7 +669,7 @@
     </div>
 
     <script>
-        // ⚠️ REMPLACEZ CETTE URL PAR VOTRE GOOGLE APPS SCRIPT
+        // URL Google Apps Script
         const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyzIePc5l1uN6XgOKYRLwyOJwi3fd7fPu6nQSBnd_GUps_Z_9DrSUXJxn0i6bC9p_6aAg/exec";
         
         const SHEET_ID = "1F331OHvagDXQmbJAhKopW3YoXRo1JhMQN-iQq3o45lQ";
@@ -689,7 +742,6 @@
                     <div class="song-badges">
                         ${song.duos ? '<div class="badge badge-duo">DUOS</div>' : ''}
                         ${song.top ? '<div class="badge badge-top">TOP</div>' : ''}
-                        <div class="badge badge-decompte">${song.decompte} ✓</div>
                     </div>
                     <button class="select-btn" onclick="selectSong(this)">SELECTIONER</button>
                 </div>
@@ -768,6 +820,76 @@
             }
         }
 
+        // Soumet une suggestion
+        async function submitSuggestion() {
+            const artiste = document.getElementById('suggestionArtiste').value.trim();
+            const titre = document.getElementById('suggestionTitre').value.trim();
+            const prenoms = document.getElementById('suggestionPrenoms').value.trim();
+            const table = document.getElementById('suggestionTable').value.trim();
+            
+            if (!artiste) {
+                alert('Veuillez entrer un artiste');
+                return;
+            }
+
+            if (!titre) {
+                alert('Veuillez entrer un titre');
+                return;
+            }
+
+            if (!table) {
+                alert('Veuillez entrer un numero de table');
+                return;
+            }
+
+            isSubmitting = true;
+            document.getElementById('submitSuggestionBtn').disabled = true;
+            document.getElementById('submitSuggestionBtn').innerHTML = '<span class="loader"></span>';
+
+            const submission = {
+                prenoms: prenoms || "Non renseigne",
+                artiste: artiste,
+                titre: titre,
+                table: table
+            };
+
+            try {
+                const response = await fetch(APP_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(submission),
+                    mode: 'no-cors'
+                });
+
+                // Avec no-cors, on ne peut pas vérifier response.ok
+                // Donc on considère que ça a marché
+                document.getElementById('suggestionModal').classList.remove('show');
+                showConfirmation();
+                
+                // Reset des champs
+                document.getElementById('suggestionArtiste').value = '';
+                document.getElementById('suggestionTitre').value = '';
+                document.getElementById('suggestionPrenoms').value = '';
+                document.getElementById('suggestionTable').value = '';
+                
+                // Retour à l'onglet TOUS LES KARAOKES
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelector('[data-tab="all"]').classList.add('active');
+                currentTab = 'all';
+                displaySongs();
+                
+            } catch (error) {
+                console.error('Erreur:', error);
+                alert('Erreur de connexion.');
+            } finally {
+                isSubmitting = false;
+                document.getElementById('submitSuggestionBtn').disabled = false;
+                document.getElementById('submitSuggestionBtn').innerHTML = 'ENVOYER';
+            }
+        }
+
         // Affiche confirmation
         function showConfirmation() {
             const msg = document.getElementById('confirmMessage');
@@ -803,7 +925,14 @@
                 btn.classList.add('active');
                 currentTab = btn.dataset.tab;
                 document.getElementById('searchInput').value = '';
-                displaySongs();
+                
+                // Si on clique sur SUGGESTION, affiche le modal
+                if (currentTab === 'search') {
+                    document.getElementById('suggestionModal').classList.add('show');
+                    document.getElementById('suggestionArtiste').focus();
+                } else {
+                    displaySongs();
+                }
             });
         });
 
@@ -825,6 +954,37 @@
             if (e.key === 'Enter') submitSong();
         });
 
+        // Gestion du modal suggestion
+        document.getElementById('submitSuggestionBtn').addEventListener('click', submitSuggestion);
+        document.getElementById('cancelSuggestionBtn').addEventListener('click', () => {
+            document.getElementById('suggestionModal').classList.remove('show');
+            document.getElementById('suggestionArtiste').value = '';
+            document.getElementById('suggestionTitre').value = '';
+            document.getElementById('suggestionPrenoms').value = '';
+            document.getElementById('suggestionTable').value = '';
+            // Retour à l'onglet TOUS LES KARAOKES
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector('[data-tab="all"]').classList.add('active');
+            currentTab = 'all';
+            displaySongs();
+        });
+
+        document.getElementById('suggestionArtiste').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') document.getElementById('suggestionTitre').focus();
+        });
+
+        document.getElementById('suggestionTitre').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') document.getElementById('suggestionPrenoms').focus();
+        });
+
+        document.getElementById('suggestionPrenoms').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') document.getElementById('suggestionTable').focus();
+        });
+
+        document.getElementById('suggestionTable').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') submitSuggestion();
+        });
+
         // Gestion QR
         document.getElementById('qrBtn').addEventListener('click', () => {
             document.getElementById('qrModal').classList.add('show');
@@ -839,6 +999,7 @@
         window.addEventListener('click', (e) => {
             const songModal = document.getElementById('songModal');
             const qrModal = document.getElementById('qrModal');
+            const suggestionModal = document.getElementById('suggestionModal');
             
             if (e.target === songModal) {
                 songModal.classList.remove('show');
@@ -846,6 +1007,13 @@
             }
             if (e.target === qrModal) {
                 qrModal.classList.remove('show');
+            }
+            if (e.target === suggestionModal) {
+                suggestionModal.classList.remove('show');
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelector('[data-tab="all"]').classList.add('active');
+                currentTab = 'all';
+                displaySongs();
             }
         });
 
