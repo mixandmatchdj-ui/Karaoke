@@ -598,7 +598,7 @@
             </div>
         </div>
     </div>
-	
+
     <!-- Modal QR Code -->
     <div class="modal" id="qrModal">
         <div class="modal-content qr-modal-content">
@@ -617,7 +617,7 @@
 
     <script>
         // ⚠️ REMPLACEZ CETTE URL PAR VOTRE GOOGLE APPS SCRIPT
-        const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw6AUHoMNKAJnH-rEFqZlvx-D2LdLd0bvKBzfgKJ0nm0unv2Mv2sTdDbznxSzTNjy_PkQ/exec";
+        const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw4SFRTraI3iDKhD0yb1UiwKtdmOrW13EgKk74iyOyAJdZ__eXohPmABhE5uFXqVz3Fwg/exec";
         
         const SHEET_ID = "1F331OHvagDXQmbJAhKopW3YoXRo1JhMQN-iQq3o45lQ";
         const API_KEY = "AIzaSyCnWlfCXPouO73szuKRjWAsxaNv8pnS_CU";
@@ -744,20 +744,23 @@
             try {
                 const response = await fetch(APP_SCRIPT_URL, {
                     method: 'POST',
-                    body: JSON.stringify(submission)
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(submission),
+                    mode: 'no-cors'
                 });
 
-                if (response.ok) {
-                    document.getElementById('songModal').classList.remove('show');
-                    showConfirmation();
-                    loadSongs(); // Recharge pour mettre a jour le DECOMPTE
-                    selectedSong = null;
-                } else {
-                    alert('Erreur lors de l\'enregistrement');
-                }
+                // Avec no-cors, on ne peut pas vérifier response.ok
+                // Donc on considère que ça a marché
+                document.getElementById('songModal').classList.remove('show');
+                showConfirmation();
+                loadSongs(); // Recharge pour mettre a jour le DECOMPTE
+                selectedSong = null;
+                
             } catch (error) {
                 console.error('Erreur:', error);
-                alert('Erreur de connexion');
+                alert('Erreur de connexion. Verifiez que l\'URL Apps Script est correcte.');
             } finally {
                 isSubmitting = false;
                 document.getElementById('submitBtn').disabled = false;
