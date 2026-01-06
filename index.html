@@ -610,7 +610,7 @@
                 <input 
                     type="text" 
                     id="suggestionArtiste" 
-                    placeholder="Ex: David Bowie"
+                    placeholder="Ex: Boerd"
                     autocomplete="off"
                 >
             </div>
@@ -620,7 +620,7 @@
                 <input 
                     type="text" 
                     id="suggestionTitre" 
-                    placeholder="Ex: Space Oddity"
+                    placeholder="Ex: Too Sad"
                     autocomplete="off"
                 >
             </div>
@@ -689,13 +689,16 @@
                 const data = await response.json();
                 
                 if (data.values) {
-                    allSongs = data.values.slice(1).map(row => ({
-                        artiste: row[0] || '',
-                        titre: row[1] || '',
-                        duos: row[2] === 'OUI',
-                        top: row[3] === 'OUI',
-                        decompte: row[4] || 0
-                    })).sort((a, b) => a.artiste.localeCompare(b.artiste));
+                    allSongs = data.values.slice(1)
+                        .filter(row => row[0] && row[1]) // Filtre les lignes vides
+                        .map(row => ({
+                            artiste: row[0] || '',
+                            titre: row[1] || '',
+                            duos: row[2] === 'OUI',
+                            top: row[3] === 'OUI',
+                            decompte: row[4] || 0
+                        }))
+                        .sort((a, b) => a.artiste.localeCompare(b.artiste));
                 }
                 
                 displaySongs();
