@@ -670,7 +670,7 @@
 
     <script>
         // URL Google Apps Script
-        const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwgM-7ENScixUnBxUrZK6h5J9lP6QZovoPkEiedN14nlUFmArTvcmmFYFC72PKSc_nPLA/exec";
+        const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyGFnHSePoBeI2I8asayBprKIsKzrPYtbNkQ6M567sPCpK5NFlvqM26Gk2nTtlMLSVTyQ/exec";
         
         const SHEET_ID = "1F331OHvagDXQmbJAhKopW3YoXRo1JhMQN-iQq3o45lQ";
         const API_KEY = "AIzaSyCnWlfCXPouO73szuKRjWAsxaNv8pnS_CU";
@@ -722,9 +722,14 @@
                     song.artiste.toLowerCase().includes(searchTerm) ||
                     song.titre.toLowerCase().includes(searchTerm);
                 
+                // Si on est sur l'onglet SUGGESTION, affiche uniquement ceux trouvés
+                if (currentTab === 'search') {
+                    return matchSearch && searchTerm.length > 0;
+                }
+                
+                // Pour les autres onglets, applique les filtres mais avec la recherche
                 if (currentTab === 'top') return matchSearch && song.top;
                 if (currentTab === 'duos') return matchSearch && song.duos;
-                if (currentTab === 'search') return matchSearch && searchTerm.length > 0;
                 return matchSearch;
             });
 
