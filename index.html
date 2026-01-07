@@ -606,7 +606,7 @@
             <p style="color: var(--dark); margin-bottom: 20px; font-size: 0.95em;">Vous n'avez pas trouvé votre chanson ? Suggérez-la !</p>
             
             <div class="form-group">
-                <label for="suggestionArtiste">Artiste *</label>
+                <label for="suggestionArtiste">Artiste</label>
                 <input 
                     type="text" 
                     id="suggestionArtiste" 
@@ -616,7 +616,7 @@
             </div>
 
             <div class="form-group">
-                <label for="suggestionTitre">Titre *</label>
+                <label for="suggestionTitre">Titre</label>
                 <input 
                     type="text" 
                     id="suggestionTitre" 
@@ -636,7 +636,7 @@
             </div>
 
             <div class="form-group">
-                <label for="suggestionTable">Numéro/Nom de table *</label>
+                <label for="suggestionTable">Numéro/Nom de table</label>
                 <input 
                     type="text" 
                     id="suggestionTable" 
@@ -851,6 +851,11 @@
                 return;
             }
 
+            if (!prenoms) {
+                alert('Veuillez entrer un prénom');
+                return;
+            }
+
             if (!table) {
                 alert('Veuillez entrer un numéro de table');
                 return;
@@ -866,7 +871,7 @@
 
             // Envoie en arrière-plan
             const submission = {
-                prenoms: prenoms || "Non renseigné",
+                prenoms: prenoms,
                 artiste: artiste,
                 titre: titre,
                 table: table
