@@ -722,15 +722,15 @@
                     song.artiste.toLowerCase().includes(searchTerm) ||
                     song.titre.toLowerCase().includes(searchTerm);
                 
-                // Si on est sur l'onglet SUGGESTION, affiche uniquement ceux trouvés
-                if (currentTab === 'search') {
-                    return matchSearch && searchTerm.length > 0;
+                // Si on tape quelque chose dans la recherche, affiche TOUS les résultats
+                if (searchTerm.length > 0) {
+                    return matchSearch;
                 }
                 
-                // Pour les autres onglets, applique les filtres mais avec la recherche
-                if (currentTab === 'top') return matchSearch && song.top;
-                if (currentTab === 'duos') return matchSearch && song.duos;
-                return matchSearch;
+                // Si pas de recherche, applique les filtres de l'onglet
+                if (currentTab === 'top') return song.top;
+                if (currentTab === 'duos') return song.duos;
+                return true; // TOUS LES KARAOKES
             });
 
             if (filtered.length === 0) {
@@ -962,13 +962,13 @@
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 currentTab = btn.dataset.tab;
-                document.getElementById('searchInput').value = '';
                 
                 // Si on clique sur SUGGESTION, affiche le modal
                 if (currentTab === 'search') {
                     document.getElementById('suggestionModal').classList.add('show');
                     document.getElementById('suggestionArtiste').focus();
                 } else {
+                    // La recherche reste active, on réaffiche avec le filtre de l'onglet
                     displaySongs();
                 }
             });
