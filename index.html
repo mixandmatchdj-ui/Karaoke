@@ -681,7 +681,7 @@
 
     <script>
         // URL Google Apps Script
-        const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxxhrxR6zVKXsd8zev4-pJzcJHfrnpfNjJbIYLEGnZbW-j1uMDSaEBpgBXEWYPpoxa6ow/exec";
+        const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyR4whzUfHsPak_XfGlsU_WSnMt9v0YW-Es8A42vg3CAzhOavB_sZHF6mzkhS4-a_rsIg/exec";
         
         const SHEET_ID = "1F331OHvagDXQmbJAhKopW3YoXRo1JhMQN-iQq3o45lQ";
         const API_KEY = "AIzaSyCnWlfCXPouO73szuKRjWAsxaNv8pnS_CU";
@@ -903,8 +903,9 @@
                 loadSongs();
                 
             } catch (error) {
-                console.error('Erreur:', error);
-                showError('Erreur de connexion');
+                console.error('Erreur submitSong:', error);
+                console.error('URL utilisée:', APP_SCRIPT_URL);
+                showError('Erreur: ' + error.message);
             } finally {
                 document.getElementById('submitBtn').disabled = false;
                 document.getElementById('submitBtn').innerHTML = 'VALIDER';
