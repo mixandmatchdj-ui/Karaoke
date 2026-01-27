@@ -896,10 +896,12 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(submission)
+                    body: JSON.stringify(submission),
+                    mode: 'no-cors'
                 });
 
-                // Recharge les données en arrière-plan
+                // Avec no-cors, on ne peut pas vérifier la réponse
+                // On suppose que ça a marché
                 loadSongs();
                 
             } catch (error) {
@@ -974,7 +976,8 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(submission)
+                    body: JSON.stringify(submission),
+                    mode: 'no-cors'
                 });
                 
             } catch (error) {
