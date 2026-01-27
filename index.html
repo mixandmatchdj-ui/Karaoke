@@ -583,7 +583,7 @@
             </div>
 
             <div class="form-group">
-                <label for="tableInput">Numéro/Nom de table *</label>
+                <label for="tableInput">Numéro/Nom de table</label>
                 <input 
                     type="text" 
                     id="tableInput" 
@@ -652,7 +652,18 @@
         </div>
     </div>
 
-    <!-- Modal QR Code -->
+    <!-- Modal Avertissement chanson déjà sélectionnée -->
+    <div class="modal" id="warningModal">
+        <div class="modal-content">
+            <h2>⚠️ Attention</h2>
+            <p style="color: var(--dark); margin-bottom: 30px; font-size: 1.1em;">Cette musique a déjà été sélectionnée dans les 6 dernières heures.</p>
+            <p style="color: var(--dark); margin-bottom: 30px;">Souhaitez-vous continuer ?</p>
+            <div class="modal-buttons">
+                <button class="modal-btn submit" id="warningContinueBtn">OUI, CONTINUER</button>
+                <button class="modal-btn cancel" id="warningCancelBtn">NON, ANNULER</button>
+            </div>
+        </div>
+    </div>
     <div class="modal" id="qrModal">
         <div class="modal-content qr-modal-content">
             <h2>QR CODE</h2>
@@ -670,7 +681,7 @@
 
     <script>
         // URL Google Apps Script
-        const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyGFnHSePoBeI2I8asayBprKIsKzrPYtbNkQ6M567sPCpK5NFlvqM26Gk2nTtlMLSVTyQ/exec";
+        const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyQQD3JkUmJXwYTiQchewyvmkiEwH1C-uuZ_oHMjG_FGjBOb5uRQKzKQ7Tk1GyHx-cZqw/exec";
         
         const SHEET_ID = "1F331OHvagDXQmbJAhKopW3YoXRo1JhMQN-iQq3o45lQ";
         const API_KEY = "AIzaSyCnWlfCXPouO73szuKRjWAsxaNv8pnS_CU";
@@ -679,9 +690,77 @@
         let currentTab = "all";
         let selectedSong = null;
         let isSubmitting = false;
+        let pendingSubmission = null; // Pour stocker la soumission en attente
 
-        // Charge les chansons
-        async function loadSongs() {
+        // Vérifie si la chanson a été sélectionnée dans les 6 dernières heures
+        async function checkSongRecentlySelected(artiste, titre) {
+            try {
+                const response = await fetch(
+                    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Demandes?key=${API_KEY}`
+                );
+                const data = await response.json();
+                
+                if (!data.values || data.values.length < 2) {
+                    return false; // Pas de données
+                }
+                
+                const now = new Date();
+                const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000);
+                
+                // Parcourt les données de Demandes (en arrière)
+                for (let i = data.values.length - 1; i >= 1; i--) {
+                    const row = data.values[i];
+                    const rowArtiste = (row[2] || "").toString().trim().toUpperCase();
+                    const rowTitre = (row[3] || "").toString().trim().toUpperCase();
+                    const rowHeure = (row[4] || "").toString().trim();
+                    
+                    // Parse l'heure
+                    const [heures, minutes, secondes] = rowHeure.split(':').map(Number);
+                    const rowDate = new Date(now);
+                    rowDate.setHours(heures, minutes, secondes);
+                    
+                    // Si la date est plus vieille que 6h, arrête
+                    if (rowDate < sixHoursAgo) {
+                        break;
+                    }
+                    
+                    // Vérifie si c'est la même chanson
+                    if (rowArtiste === artiste.toUpperCase() && rowTitre === titre.toUpperCase()) {
+                        return true; // Trouvée dans les 6 dernières heures
+                    }
+                }
+                
+                return false;
+            } catch (error) {
+                console.error('Erreur lors de la vérification:', error);
+                return false; // En cas d'erreur, on continue quand même
+            }
+        }
+
+        // Incrémente le compteur de connexions
+        async function incrementConnectionCounter() {
+            try {
+                const response = await fetch(
+                    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Liste!G2?key=${API_KEY}`
+                );
+                const data = await response.json();
+                const currentValue = parseInt(data.values?.[0]?.[0]) || 0;
+                
+                // On envoie juste une notification au script (pas de modification directe)
+                fetch(APP_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        type: 'connection'
+                    }),
+                    mode: 'no-cors'
+                });
+            } catch (error) {
+                console.error('Erreur compteur:', error);
+            }
+        }
             try {
                 const response = await fetch(
                     `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Liste?key=${API_KEY}`
@@ -783,13 +862,27 @@
                 return;
             }
 
-            if (!table) {
-                alert('Veuillez entrer un numéro de table');
-                return;
-            }
-
             if (!selectedSong) return;
 
+            // Vérifie si la chanson a été sélectionnée dans les 6 dernières heures
+            const recentlySelected = await checkSongRecentlySelected(selectedSong.artiste, selectedSong.titre);
+            
+            if (recentlySelected) {
+                // Affiche le modal d'avertissement
+                pendingSubmission = {
+                    prenoms: prenoms,
+                    table: table
+                };
+                document.getElementById('warningModal').classList.add('show');
+                return;
+            }
+            
+            // Sinon, envoie directement
+            sendSongSubmission(prenoms, table);
+        }
+
+        // Envoie la soumission (après confirmation si nécessaire)
+        async function sendSongSubmission(prenoms, table) {
             // Disable button immédiatement
             document.getElementById('submitBtn').disabled = true;
             document.getElementById('submitBtn').innerHTML = '<span class="loader"></span>';
@@ -803,7 +896,7 @@
                 prenoms: prenoms,
                 artiste: selectedSong.artiste,
                 titre: selectedSong.titre,
-                table: table
+                table: table || ""
             };
 
             // Réinitialise les champs
@@ -1038,11 +1131,26 @@
             document.getElementById('qrModal').classList.remove('show');
         });
 
+        // Gestion du modal avertissement
+        document.getElementById('warningContinueBtn').addEventListener('click', () => {
+            document.getElementById('warningModal').classList.remove('show');
+            if (pendingSubmission) {
+                sendSongSubmission(pendingSubmission.prenoms, pendingSubmission.table);
+                pendingSubmission = null;
+            }
+        });
+
+        document.getElementById('warningCancelBtn').addEventListener('click', () => {
+            document.getElementById('warningModal').classList.remove('show');
+            pendingSubmission = null;
+        });
+
         // Ferme modal au clic en dehors
         window.addEventListener('click', (e) => {
             const songModal = document.getElementById('songModal');
             const qrModal = document.getElementById('qrModal');
             const suggestionModal = document.getElementById('suggestionModal');
+            const warningModal = document.getElementById('warningModal');
             
             if (e.target === songModal) {
                 songModal.classList.remove('show');
@@ -1058,10 +1166,15 @@
                 currentTab = 'all';
                 displaySongs();
             }
+            if (e.target === warningModal) {
+                warningModal.classList.remove('show');
+                pendingSubmission = null;
+            }
         });
 
         // Lance au demarrage
         loadSongs();
+        incrementConnectionCounter();
     </script>
 </body>
 </html>
