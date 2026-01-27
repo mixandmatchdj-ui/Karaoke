@@ -693,6 +693,8 @@
         let pendingSubmission = null; // Pour stocker la soumission en attente
 
         // Vérifie si la chanson a été sélectionnée dans les 6 dernières heures
+        // (Fonction désactivée pour éviter les erreurs CORS)
+        /*
         async function checkSongRecentlySelected(artiste, titre) {
             try {
                 const response = await fetch(
@@ -701,43 +703,42 @@
                 const data = await response.json();
                 
                 if (!data.values || data.values.length < 2) {
-                    return false; // Pas de données
+                    return false;
                 }
                 
                 const now = new Date();
                 const sixHoursAgo = new Date(now.getTime() - 6 * 60 * 60 * 1000);
                 
-                // Parcourt les données de Demandes (en arrière)
                 for (let i = data.values.length - 1; i >= 1; i--) {
                     const row = data.values[i];
                     const rowArtiste = (row[2] || "").toString().trim().toUpperCase();
                     const rowTitre = (row[3] || "").toString().trim().toUpperCase();
                     const rowHeure = (row[4] || "").toString().trim();
                     
-                    // Parse l'heure
                     const [heures, minutes, secondes] = rowHeure.split(':').map(Number);
                     const rowDate = new Date(now);
                     rowDate.setHours(heures, minutes, secondes);
                     
-                    // Si la date est plus vieille que 6h, arrête
                     if (rowDate < sixHoursAgo) {
                         break;
                     }
                     
-                    // Vérifie si c'est la même chanson
                     if (rowArtiste === artiste.toUpperCase() && rowTitre === titre.toUpperCase()) {
-                        return true; // Trouvée dans les 6 dernières heures
+                        return true;
                     }
                 }
                 
                 return false;
             } catch (error) {
                 console.error('Erreur lors de la vérification:', error);
-                return false; // En cas d'erreur, on continue quand même
+                return false;
             }
         }
+        */
 
         // Incrémente le compteur de connexions
+        // (Fonction désactivée pour éviter les erreurs CORS)
+        /*
         async function incrementConnectionCounter() {
             try {
                 const response = await fetch(
@@ -746,7 +747,6 @@
                 const data = await response.json();
                 const currentValue = parseInt(data.values?.[0]?.[0]) || 0;
                 
-                // On envoie juste une notification au script (pas de modification directe)
                 fetch(APP_SCRIPT_URL, {
                     method: 'POST',
                     headers: {
@@ -761,6 +761,10 @@
                 console.error('Erreur compteur:', error);
             }
         }
+        */
+
+        // Charge les chansons
+        async function loadSongs() {
             try {
                 const response = await fetch(
                     `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/Liste?key=${API_KEY}`
@@ -864,25 +868,6 @@
 
             if (!selectedSong) return;
 
-            // Vérifie si la chanson a été sélectionnée dans les 6 dernières heures
-            const recentlySelected = await checkSongRecentlySelected(selectedSong.artiste, selectedSong.titre);
-            
-            if (recentlySelected) {
-                // Affiche le modal d'avertissement
-                pendingSubmission = {
-                    prenoms: prenoms,
-                    table: table
-                };
-                document.getElementById('warningModal').classList.add('show');
-                return;
-            }
-            
-            // Sinon, envoie directement
-            sendSongSubmission(prenoms, table);
-        }
-
-        // Envoie la soumission (après confirmation si nécessaire)
-        async function sendSongSubmission(prenoms, table) {
             // Disable button immédiatement
             document.getElementById('submitBtn').disabled = true;
             document.getElementById('submitBtn').innerHTML = '<span class="loader"></span>';
@@ -911,8 +896,7 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(submission),
-                    mode: 'no-cors'
+                    body: JSON.stringify(submission)
                 });
 
                 // Recharge les données en arrière-plan
@@ -989,8 +973,7 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(submission),
-                    mode: 'no-cors'
+                    body: JSON.stringify(submission)
                 });
                 
             } catch (error) {
@@ -1174,7 +1157,6 @@
 
         // Lance au demarrage
         loadSongs();
-        incrementConnectionCounter();
     </script>
 </body>
 </html>
