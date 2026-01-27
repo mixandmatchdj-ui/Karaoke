@@ -681,7 +681,7 @@
 
     <script>
         // URL Google Apps Script
-        const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8Tl120SM-kapWxYnap0l4LzRN4v4sUXNbdPhyo0ecUbICdCoDr_QlXHP2XleKajsn/exec";
+        const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby04B2zgUdRhxTeKHmvAjceNlSIBeqbfgztzFFB1MJPL2VKbtlI25OcShOZwshuGOYgPg/exec";
         
         const SHEET_ID = "1F331OHvagDXQmbJAhKopW3YoXRo1JhMQN-iQq3o45lQ";
         const API_KEY = "AIzaSyCnWlfCXPouO73szuKRjWAsxaNv8pnS_CU";
@@ -1159,8 +1159,30 @@
             }
         });
 
+        // Compteur de connexion (une seule fois par session)
+        function trackConnection() {
+            // Vérifie si on a déjà compté cette session
+            if (!sessionStorage.getItem('connectionTracked')) {
+                // Envoie une requête pour incrémenter le compteur
+                fetch(APP_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        type: 'connection'
+                    }),
+                    mode: 'no-cors'
+                }).catch(err => console.log('Compteur:', err));
+                
+                // Marque que on a déjà compté cette session
+                sessionStorage.setItem('connectionTracked', 'true');
+            }
+        }
+
         // Lance au demarrage
         loadSongs();
+        trackConnection();
     </script>
 </body>
 </html>
