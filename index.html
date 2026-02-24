@@ -427,13 +427,18 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            padding: 30px;
+            background: linear-gradient(135deg, #FF6B35 0%, #0099FF 100%);
+            border-radius: 50px;
+            box-shadow: 0 15px 40px rgba(255, 107, 53, 0.4);
         }
 
         #qrcode canvas {
-            border: 3px solid var(--primary);
-            border-radius: 15px;
-            padding: 10px;
+            border: none;
+            border-radius: 30px;
+            padding: 15px;
             background: white;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
         }
 
         .qr-url {
@@ -681,7 +686,7 @@
 
     <script>
         // URL Google Apps Script
-        const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyR4whzUfHsPak_XfGlsU_WSnMt9v0YW-Es8A42vg3CAzhOavB_sZHF6mzkhS4-a_rsIg/exec";
+        const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzG0VxlsLAUwVbkqmRxMd0eg5xKiqTBM5sVJfzY_IiALUw7SbTmhWl996PbdhQzExGZlA/exec";
         
         const SHEET_ID = "1F331OHvagDXQmbJAhKopW3YoXRo1JhMQN-iQq3o45lQ";
         const API_KEY = "AIzaSyCnWlfCXPouO73szuKRjWAsxaNv8pnS_CU";
@@ -796,14 +801,21 @@
             }
         }
 
+        // Enlève les accents d'une chaîne
+        function removeAccents(str) {
+            return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        }
+
         // Affiche les chansons
         function displaySongs() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const searchTerm = removeAccents(document.getElementById('searchInput').value.toLowerCase());
             
             let filtered = allSongs.filter(song => {
+                const artisteClean = removeAccents(song.artiste.toLowerCase());
+                const titreClean = removeAccents(song.titre.toLowerCase());
                 const matchSearch = 
-                    song.artiste.toLowerCase().includes(searchTerm) ||
-                    song.titre.toLowerCase().includes(searchTerm);
+                    artisteClean.includes(searchTerm) ||
+                    titreClean.includes(searchTerm);
                 
                 // Si on tape quelque chose dans la recherche, affiche TOUS les résultats
                 if (searchTerm.length > 0) {
