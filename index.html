@@ -866,6 +866,9 @@
 
         // Soumet la chanson
         async function submitSong() {
+            // Garde anti-double-clic : si une soumission est déjà en cours, on ignore
+            if (isSubmitting) return;
+
             const prenoms = document.getElementById('prenomsInput').value.trim();
             const table = document.getElementById('tableInput').value.trim();
             
@@ -875,6 +878,9 @@
             }
 
             if (!selectedSong) return;
+
+            // Active le garde IMMÉDIATEMENT pour bloquer tout autre clic
+            isSubmitting = true;
 
             // Disable button immédiatement
             document.getElementById('submitBtn').disabled = true;
@@ -886,6 +892,7 @@
 
             // Envoie en arrière-plan
             const submission = {
+                type: "selection",
                 prenoms: prenoms,
                 artiste: selectedSong.artiste,
                 titre: selectedSong.titre,
@@ -919,11 +926,16 @@
             } finally {
                 document.getElementById('submitBtn').disabled = false;
                 document.getElementById('submitBtn').innerHTML = 'VALIDER';
+                // Libère le garde pour autoriser de nouveau des soumissions
+                isSubmitting = false;
             }
         }
 
         // Soumet une suggestion
         async function submitSuggestion() {
+            // Garde anti-double-clic : si une soumission est déjà en cours, on ignore
+            if (isSubmitting) return;
+
             const artiste = document.getElementById('suggestionArtiste').value.trim();
             const titre = document.getElementById('suggestionTitre').value.trim();
             const prenoms = document.getElementById('suggestionPrenoms').value.trim();
@@ -949,6 +961,9 @@
                 return;
             }
 
+            // Active le garde IMMÉDIATEMENT pour bloquer tout autre clic
+            isSubmitting = true;
+
             // Disable button immédiatement
             document.getElementById('submitSuggestionBtn').disabled = true;
             document.getElementById('submitSuggestionBtn').innerHTML = '<span class="loader"></span>';
@@ -959,6 +974,7 @@
 
             // Envoie en arrière-plan
             const submission = {
+                type: "suggestion",
                 prenoms: prenoms,
                 artiste: artiste,
                 titre: titre,
@@ -994,6 +1010,8 @@
             } finally {
                 document.getElementById('submitSuggestionBtn').disabled = false;
                 document.getElementById('submitSuggestionBtn').innerHTML = 'ENVOYER';
+                // Libère le garde pour autoriser de nouveau des soumissions
+                isSubmitting = false;
             }
         }
 
